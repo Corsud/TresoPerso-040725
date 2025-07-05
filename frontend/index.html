@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tresoperso</title>
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" id="theme-link" href="light.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
+</head>
+<body>
+    <form id="login-form">
+        <input type="text" id="username" placeholder="Utilisateur" required />
+        <input type="password" id="password" placeholder="Mot de passe" required />
+        <button type="submit">Connexion</button>
+    </form>
+    <div id="app" style="display:none;">
+        <nav id="navbar">
+            <ul class="menu">
+                <li class="open">
+                    <div class="menu-header">Transactions</div>
+                    <ul class="submenu">
+                        <li><button data-target="transactions-section">Transactions</button></li>
+                        <li><button data-target="accounts-section">Comptes</button></li>
+                    </ul>
+                </li>
+                <li><button data-target="dashboard-section">Tableau de bord</button></li>
+                <li>
+                    <div class="menu-header">Analyses</div>
+                    <ul class="submenu">
+                        <li><button data-target="stats-section">Statistiques</button></li>
+                        <li><button data-target="projection-section">Projections</button></li>
+                    </ul>
+                </li>
+                <li>
+                    <div class="menu-header">Paramètres</div>
+                    <ul class="submenu">
+                        <li><button data-target="settings-section">Paramètres</button></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div id="content">
+            <h1>Tresoperso</h1>
+            <section id="dashboard-section" style="display:none;">
+                <h2>Dashboard</h2>
+                <div id="dashboard-content">Chargement...</div>
+                <canvas id="dashboardChart" width="400" height="200"></canvas>
+            </section>
+            <section id="transactions-section">
+
+                <div class="transactions-header">
+                    <h2>Transactions</h2>
+                    <div id="account-controls">
+                        <label for="account-select">Compte :</label>
+                        <select id="account-select">
+                            <option value="">(Tous)</option>
+                        </select>
+                        <span id="account-info"></span>
+                    </div>
+                    <form id="balance-form" style="margin-top:0.5em;">
+                        <input type="date" id="balance-date" />
+                        <input type="number" step="0.01" id="balance-amount" placeholder="Solde" />
+                        <button type="submit">Enregistrer</button>
+                    </form>
+                </div>
+                <table id="transactions-table">
+                    <thead>
+                        <tr class="filter-row">
+                            <th><select id="filter-favorite">
+                                <option value="">(Tous)</option>
+                                <option value="true">Oui</option>
+                                <option value="false">Non</option>
+                            </select></th>
+                            <th></th>
+                            <th class="stack">
+                                <input type="date" id="filter-start-date" />
+                                <input type="date" id="filter-end-date" />
+                                <select id="filter-period">
+                                    <option value="">(Période)</option>
+                                    <option value="current-week">Semaine en cours</option>
+                                    <option value="previous-week">Semaine précédente</option>
+                                    <option value="current-month">Mois en cours</option>
+                                    <option value="previous-month">Mois précédent</option>
+                                    <option value="ytd">Année en cours</option>
+                                    <option value="last-6-months">6 derniers mois</option>
+                                    <option value="previous-year">Année précédente</option>
+                                    <option value="all">Tout</option>
+                                </select>
+                            </th>
+                            <th><select id="filter-type"><option value="">(Tous)</option></select></th>
+                            <th><select id="filter-payment"><option value="">(Tous)</option></select></th>
+                            <th><input type="text" id="filter-label" placeholder="Libellé" /></th>
+                            <th class="stack">
+                                <input type="number" id="filter-min-amount" placeholder="Min" style="width:5em;" />
+                                <input type="number" id="filter-max-amount" placeholder="Max" style="width:5em;" />
+                                <select id="filter-amount-order">
+                                    <option value="">(Date)</option>
+                                    <option value="asc">Croissant</option>
+                                    <option value="desc">Décroissant</option>
+                                </select>
+                            </th>
+                            <th><select id="filter-category"><option value="">(Toutes)</option></select></th>
+                            <th><select id="filter-subcategory"><option value="">(Toutes)</option></select></th>
+                            <th></th>
+                            <th><select id="filter-reconciled">
+                                <option value="">(Tous)</option>
+                                <option value="true">Oui</option>
+                                <option value="false">Non</option>
+                            </select></th>
+                            <th><select id="filter-toanalyze">
+                                <option value="">(Tous)</option>
+                                <option value="true">Oui</option>
+                                <option value="false">Non</option>
+                            </select></th>
+                        </tr>
+                        <tr>
+                            <th>★</th>
+                            <th>Filtre</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Moyen de paiement</th>
+                            <th>Libellé</th>
+                            <th>Montant</th>
+                            <th>Catégorie</th>
+                            <th>Sous-catégorie</th>
+                            <th>Règle</th>
+                            <th>Pointée</th>
+                            <th>A analyser</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+
+            <section id="accounts-section" style="display:none;">
+                <h2>Comptes</h2>
+                <form id="upload-form">
+                    <input type="file" id="csv-file" name="file" accept=".csv" required />
+                    <button type="submit">Importer CSV</button>
+                </form>
+                <table id="accounts-table">
+                    <thead><tr><th>Compte</th><th>Actions</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+
+            <section id="stats-section" style="display:none;">
+                <h2>Statistiques mensuelles</h2>
+                <select id="stats-period">
+                    <option value="current-week">Semaine en cours</option>
+                    <option value="previous-week">Semaine précédente</option>
+                    <option value="current-month" selected>Mois en cours</option>
+                    <option value="previous-month">Mois précédent</option>
+                    <option value="ytd">Année en cours</option>
+                    <option value="last-6-months">6 derniers mois</option>
+                    <option value="previous-year">Année précédente</option>
+                    <option value="all">Tout</option>
+                </select>
+                <canvas id="statsChart" width="400" height="200"></canvas>
+                <table id="category-charts">
+                    <tr>
+                        <td><canvas id="incomeChart"></canvas></td>
+                        <td><canvas id="expenseChart"></canvas></td>
+                    </tr>
+                </table>
+                <div id="category-no-data" style="display:none;">No data</div>
+                <div id="sankeyChart" style="width:90vw;height:300px;margin:1em 0;"></div>
+                <div id="financialSankey"></div>
+            </section>
+
+            <section id="projection-section" style="display:none;">
+                <h2>Projection</h2>
+                <p id="projection-cat-period"></p>
+                <table id="projection-cat-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+                <p id="projection-future-period"></p>
+                <div id="projection-mode">
+                    <label><input type="radio" name="projection-mode" value="average" checked> valeurs moyennes</label>
+                    <label><input type="radio" name="projection-mode" value="forecast"> valeurs selon régression linéaire</label>
+                </div>
+                <table id="projection-future-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+                <table id="projection-table">
+                    <thead><tr><th>Mois</th><th>Montant</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <canvas id="projectionChart" width="400" height="200"></canvas>
+            </section>
+
+            <section id="settings-section" style="display:none;">
+                <div id="catsubs-container">
+                    <div class="settings-col">
+                        <h2>Catégories</h2>
+                        <form id="category-form">
+                            <input type="hidden" id="category-id" />
+                            <input type="text" id="category-name" placeholder="Nom" required />
+                            <input type="color" id="category-color" value="#000000" />
+                            <button type="submit">Enregistrer</button>
+                        </form>
+                        <table id="categories-table">
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="settings-col">
+                        <h3>Sous-catégories</h3>
+                        <form id="subcategory-form">
+                            <input type="hidden" id="subcategory-id" />
+                            <input type="text" id="subcategory-name" placeholder="Nom" required />
+                            <select id="subcategory-category"></select>
+                            <input type="color" id="subcategory-color" value="#000000" />
+                            <button type="submit">Enregistrer</button>
+                        </form>
+                        <ul id="subcategories-list" style="display:none;"></ul>
+                    </div>
+                </div>
+
+                <h2 style="display:none;">Règles</h2>
+                <form id="rule-form" style="display:none;">
+                    <input type="hidden" id="rule-id" />
+                    <input type="text" id="rule-pattern" placeholder="Mot-clé" required />
+                    <select id="rule-category"></select>
+                    <select id="rule-subcategory">
+                        <option value="">(Aucune)</option>
+                    </select>
+                    <button type="submit">Enregistrer</button>
+                </form>
+                <ul id="rules-list" style="display:none;"></ul>
+                <h2>Préférences d'affichage</h2>
+                <label for="theme-select">Thème :</label>
+                <select id="theme-select">
+                    <option value="light">Clair</option>
+                    <option value="dark">Sombre</option>
+                </select>
+                <label for="font-select">Police :</label>
+                <select id="font-select">
+                    <option value="roboto">Roboto</option>
+                    <option value="arial">Arial</option>
+                    <option value="geneva">Geneva</option>
+                </select>
+                <div>
+                    <label><input type="checkbox" id="hide-amounts"> Masquer montants</label>
+                </div>
+
+                <h2>RESET</h2>
+                <button id="reset-transactions">Effacer les transactions</button>
+            </section>
+        </div>
+
+        <div id="category-overlay" class="overlay">
+            <div class="popup">
+                <select id="popup-category-select"></select>
+                <button id="popup-category-save">OK</button>
+            </div>
+        </div>
+        <div id="subcategory-overlay" class="overlay">
+            <div class="popup">
+                <select id="popup-subcategory-select"></select>
+                <button id="popup-subcategory-save">OK</button>
+            </div>
+        </div>
+        <div id="duplicate-overlay" class="overlay">
+            <div class="popup">
+                <form id="duplicate-form">
+                    <h3>Doublons détectés</h3>
+                    <ul id="duplicate-list"></ul>
+                    <button type="submit">Insérer la sélection</button>
+                </form>
+            </div>
+        </div>
+        <div id="rule-overlay" class="overlay">
+            <div class="popup">
+                <div id="rule-label-checkboxes"></div>
+                <select id="rule-overlay-category"></select>
+                <select id="rule-overlay-subcategory"></select>
+                <button id="rule-overlay-save">OK</button>
+            </div>
+        </div>
+        <div id="fav-filter-overlay" class="overlay">
+            <div class="popup">
+                <div id="fav-filter-label-checkboxes"></div>
+                <select id="fav-filter-overlay-category"></select>
+                <select id="fav-filter-overlay-subcategory"></select>
+                <button id="fav-filter-overlay-save">OK</button>
+            </div>
+        </div>
+        <div id="manage-subcats-overlay" class="overlay">
+            <div class="popup">
+                <table id="manage-subcats-table">
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="delete-error-overlay" class="overlay">
+            <div class="popup">
+                <h3>Sous-catégories liées</h3>
+                <ul id="delete-error-subcat-list"></ul>
+                <h3>Transactions liées</h3>
+                <ul id="delete-error-list"></ul>
+                <button id="delete-error-close">Fermer</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Global defaults for all charts
+        Chart.defaults.color = '#eeeeee';
+        Chart.defaults.font.size = 13;
+
+        let categoriesData = [];
+        let subcategoriesData = [];
+        let categoryOptions = [];
+        let accountsData = [];
+        let rulesData = [];
+        let selectedAccountId = '';
+
+        function findCategory(id) {
+            return categoriesData.find(c => String(c.id) === String(id));
+        }
+
+        function findSubcategory(id) {
+            return subcategoriesData.find(s => String(s.id) === String(id));
+        }
+
+        async function fetchCategoryOptions() {
+            const resp = await fetch('/category-options');
+            if (!resp.ok) return;
+            categoryOptions = await resp.json();
+            populateCategorySelects();
+        }
+
+        async function refreshCategoryData() {
+            await fetchCategories();
+            await fetchSubcategories();
+            await fetchCategoryOptions();
+        }
+
+        function populateCategorySelects() {
+            const catSelectIds = [
+                'popup-category-select',
+                'rule-category',
+                'rule-overlay-category',
+                'subcategory-category',
+                'filter-category',
+                'fav-filter-overlay-category'
+            ];
+            const subSelectIds = [
+                'popup-subcategory-select',
+                'rule-subcategory',
+                'rule-overlay-subcategory',
+                'filter-subcategory',
+                'fav-filter-overlay-subcategory'
+            ];
+
+           catSelectIds.forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                if (id === 'filter-category') {
+                    sel.innerHTML = '<option value="">(Toutes)</option><option value="none">(Aucune)</option>';
+                } else {
+                    sel.innerHTML = '<option value="">(Aucune)</option>';
+                }
+            });
+
+            subSelectIds.forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const noneText = id === 'filter-subcategory' ? '(Toutes)' : '(Aucune)';
+                sel.innerHTML = `<option value="">${noneText}</option>`;
+            });
+
+            categoryOptions.forEach(cat => {
+                catSelectIds.forEach(id => {
+                    const sel = document.getElementById(id);
+                    if (!sel) return;
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name;
+                    sel.appendChild(opt.cloneNode(true));
+                });
+                (cat.subcategories || []).forEach(sub => {
+                    subSelectIds.forEach(id => {
+                        const sel = document.getElementById(id);
+                        if (!sel) return;
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = `${cat.name} - ${sub.name}`;
+                        sel.appendChild(opt.cloneNode(true));
+                    });
+                });
+            });
+
+            const subSelectCat = document.getElementById('subcategory-category');
+            if (subSelectCat) {
+                subSelectCat.onchange = () => {
+                    const cat = findCategory(subSelectCat.value);
+                    const colorInput = document.getElementById('subcategory-color');
+                    if (cat && colorInput) {
+                        colorInput.value = cat.color || '#000000';
+                    }
+                };
+                if (subSelectCat.value) subSelectCat.onchange();
+            }
+        }
+
+        function populateSubPopup(catId) {
+            const sel = document.getElementById('popup-subcategory-select');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">(Aucune)</option>';
+            categoryOptions.forEach(cat => {
+                (cat.subcategories || []).forEach(sub => {
+                    if (!catId || String(cat.id) === String(catId)) {
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = `${cat.name} - ${sub.name}`;
+                        sel.appendChild(opt);
+                    }
+                });
+            });
+        }
+
+        function updateSubcategories(catId, selectId, noneText) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            sel.innerHTML = `<option value="">${noneText}</option>`;
+            categoryOptions.forEach(cat => {
+                (cat.subcategories || []).forEach(sub => {
+                    if (!catId || String(cat.id) === String(catId)) {
+                        const opt = document.createElement('option');
+                        opt.value = sub.id;
+                        opt.textContent = catId ? sub.name : `${cat.name} - ${sub.name}`;
+                        sel.appendChild(opt);
+                    }
+                });
+            });
+        }
+
+        function formatAmount(v) {
+            if (localStorage.getItem('hideAmounts') === 'true') {
+                return '•••';
+            }
+            return (v || 0).toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function getChartOptions(hide, withScale = true) {
+            const opts = {
+                plugins: {
+                    tooltip: {
+                        enabled: !hide,
+                        callbacks: {
+                            label: ctx => formatAmount(ctx.parsed.y ?? ctx.parsed)
+                        }
+                    }
+                }
+            };
+            if (withScale) {
+                opts.scales = {
+                    y: {
+                        ticks: {
+                            display: !hide,
+                            callback: val => formatAmount(val)
+                        }
+                    }
+                };
+            }
+            return opts;
+        }
+
+        function formatDate(dateStr) {
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        function getPeriodDates(option) {
+            const today = new Date();
+            let start = null;
+            let end = null;
+            const day = today.getDay();
+            switch (option) {
+                case 'current-week':
+                    start = new Date(today);
+                    start.setDate(today.getDate() - ((day + 6) % 7));
+                    end = new Date(start);
+                    end.setDate(start.getDate() + 6);
+                    break;
+                case 'previous-week':
+                    end = new Date(today);
+                    end.setDate(today.getDate() - ((day + 6) % 7) - 1);
+                    start = new Date(end);
+                    start.setDate(end.getDate() - 6);
+                    break;
+                case 'current-month':
+                    start = new Date(today.getFullYear(), today.getMonth(), 1);
+                    end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    break;
+                case 'previous-month':
+                    start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    end = new Date(today.getFullYear(), today.getMonth(), 0);
+                    break;
+                case 'ytd':
+                    start = new Date(today.getFullYear(), 0, 1);
+                    end = new Date(today.getFullYear(), 11, 31);
+                    break;
+                case 'last-6-months':
+                    start = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+                    end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    break;
+                case 'previous-year':
+                    start = new Date(today.getFullYear() - 1, 0, 1);
+                    end = new Date(today.getFullYear() - 1, 11, 31);
+                    break;
+                default:
+                    start = null;
+                    end = null;
+            }
+            const fmt = d => d.toISOString().slice(0, 10);
+            return {
+                start: start ? fmt(start) : '',
+                end: end ? fmt(end) : ''
+            };
+        }
+
+        function updateAccountDropdown() {
+            const select = document.getElementById('account-select');
+            select.innerHTML = '<option value="">(Tous)</option>';
+            accountsData.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = `${a.account_type} ${a.number}`.trim();
+                select.appendChild(opt);
+            });
+            select.value = selectedAccountId;
+        }
+
+        function displayAccountInfo() {
+            const info = document.getElementById('account-info');
+            const acc = accountsData.find(a => String(a.id) === String(selectedAccountId));
+            if (acc) {
+                const date = acc.export_date ? ` - export ${formatDate(acc.export_date)}` : '';
+                info.textContent = `${acc.account_type} ${acc.number}${date}`.trim();
+            } else {
+                info.textContent = '';
+            }
+        }
+
+        function populateAccountsTable() {
+            const tbody = document.querySelector('#accounts-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            accountsData.forEach(a => {
+                const tr = document.createElement('tr');
+                const infoTd = document.createElement('td');
+                const date = a.export_date ? ` - export ${formatDate(a.export_date)}` : '';
+                infoTd.textContent = `${a.account_type} ${a.number}${date}`.trim();
+                tr.appendChild(infoTd);
+
+                const actionTd = document.createElement('td');
+                const upd = document.createElement('button');
+                upd.textContent = 'Mettre à jour';
+                upd.onclick = () => {
+                    selectedAccountId = a.id;
+                    updateAccountDropdown();
+                    displayAccountInfo();
+                    fetchBalanceInfo();
+                    const fi = document.getElementById('csv-file');
+                    if (fi) fi.click();
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    if (!confirm('Supprimer ce compte ?')) return;
+                    await deleteAccount(a.id);
+                };
+                actionTd.appendChild(upd);
+                actionTd.append(' ', del);
+                tr.appendChild(actionTd);
+
+                tbody.appendChild(tr);
+            });
+            adjustLabelColumns();
+        }
+
+        function adjustLabelColumns() {
+            const table = document.getElementById('transactions-table');
+            if (!table) return;
+            table.classList.remove('long-label');
+            const cells = table.querySelectorAll('tbody td:nth-child(6)');
+            for (const td of cells) {
+                const lh = parseFloat(getComputedStyle(td).lineHeight);
+                const lines = Math.round(td.getBoundingClientRect().height / lh);
+                if (lines >= 6) {
+                    table.classList.add('long-label');
+                    break;
+                }
+            }
+        }
+
+        async function fetchAccounts() {
+            const resp = await fetch('/accounts');
+            if (!resp.ok) return;
+            accountsData = await resp.json();
+            updateAccountDropdown();
+            populateAccountsTable();
+        }
+
+        async function createAccount(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            const resp = await fetch('/import', { method: 'POST', body: formData });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+                if (data.account) {
+                    selectedAccountId = data.account.id;
+                }
+                await fetchAccounts();
+                displayAccountInfo();
+                fetchBalanceInfo();
+                if (data.duplicates && data.duplicates.length) {
+                    showDuplicates(data.duplicates, data.account ? data.account.id : '');
+                } else {
+                    fetchTransactions();
+                    fetchDashboard();
+                    fetchStats();
+                    fetchProjection();
+                    fetchProjectionCategories();
+                    fetchProjectionFuture();
+                    fetchCategoryStats();
+                    fetchSankeyStats();
+                }
+            } else {
+                if (data.errors) {
+                    alert(data.errors.join('\n'));
+                } else {
+                    alert(data.error || 'Erreur import');
+                }
+            }
+        }
+
+        async function deleteAccount(id) {
+            const resp = await fetch(`/accounts/${id}`, { method: 'DELETE' });
+            if (resp.ok) {
+                if (String(selectedAccountId) === String(id)) {
+                    selectedAccountId = '';
+                }
+                await fetchAccounts();
+                displayAccountInfo();
+                fetchBalanceInfo();
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            }
+        }
+
+        async function fetchBalanceInfo() {
+            const dateInput = document.getElementById('balance-date');
+            const amtInput = document.getElementById('balance-amount');
+            if (!selectedAccountId) {
+                dateInput.value = '';
+                amtInput.value = '';
+                return;
+            }
+            const resp = await fetch(`/accounts/${selectedAccountId}/balance`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            dateInput.value = data.balance_date || '';
+            amtInput.value = data.initial_balance != null ? data.initial_balance : '';
+        }
+
+        async function fetchTransactions() {
+            const params = new URLSearchParams();
+            if (selectedAccountId) params.set('account_id', selectedAccountId);
+            let start = document.getElementById('filter-start-date').value;
+            let end = document.getElementById('filter-end-date').value;
+            const period = document.getElementById('filter-period').value;
+            if (period) {
+                const d = getPeriodDates(period);
+                start = d.start;
+                end = d.end;
+            }
+            const txType = document.getElementById('filter-type').value.trim();
+            const pay = document.getElementById('filter-payment').value.trim();
+            const label = document.getElementById('filter-label').value.trim();
+            const minAmt = document.getElementById('filter-min-amount').value;
+            const maxAmt = document.getElementById('filter-max-amount').value;
+            const amtOrder = document.getElementById('filter-amount-order').value;
+            const cat = document.getElementById('filter-category').value;
+            const sub = document.getElementById('filter-subcategory').value;
+            const fav = document.getElementById('filter-favorite').value;
+            const rec = document.getElementById('filter-reconciled').value;
+            const ana = document.getElementById('filter-toanalyze').value;
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            if (txType) params.set('type', txType);
+            if (pay) params.set('payment_method', pay);
+            if (label) params.set('label', label);
+            if (minAmt) params.set('min_amount', minAmt);
+            if (maxAmt) params.set('max_amount', maxAmt);
+            if (cat === 'none') {
+                params.set('category_none', 'true');
+            } else if (cat) {
+                params.set('category_id', cat);
+            }
+            if (sub) params.set('subcategory', sub);
+            if (fav === 'true' || fav === 'false') params.set('favorite', fav);
+            if (rec === 'true' || rec === 'false') params.set('reconciled', rec);
+            if (ana === 'true' || ana === 'false') params.set('to_analyze', ana);
+            if (amtOrder === 'asc' || amtOrder === 'desc') {
+                params.set('sort_by', 'amount');
+                params.set('order', amtOrder);
+            }
+            const url = '/transactions' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            displayAccountInfo();
+            const typeSel = document.getElementById('filter-type');
+            const paySel = document.getElementById('filter-payment');
+            const currentType = typeSel.value;
+            const currentPay = paySel.value;
+            const types = [...new Set(data.map(t => t.type).filter(v => v))];
+            const pays = [...new Set(data.map(t => t.payment_method).filter(v => v))];
+            typeSel.innerHTML = '<option value="">(Tous)</option>';
+            types.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                typeSel.appendChild(opt);
+            });
+            if (currentType) typeSel.value = currentType;
+            paySel.innerHTML = '<option value="">(Tous)</option>';
+            pays.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                paySel.appendChild(opt);
+            });
+            if (currentPay) paySel.value = currentPay;
+            const tbody = document.querySelector('#transactions-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(t => {
+                const tr = document.createElement('tr');
+                const type = t.type || '';
+                const pay = t.payment_method || '';
+
+                const favCell = document.createElement('td');
+                const favBtn = document.createElement('button');
+                favBtn.className = 'tx-fav-btn' + (t.favorite ? ' selected' : '');
+                favBtn.textContent = t.favorite ? '★' : '☆';
+                favBtn.addEventListener('click', async () => {
+                    await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({favorite: !t.favorite})});
+                    fetchTransactions();
+                });
+                favCell.appendChild(favBtn);
+                tr.appendChild(favCell);
+
+                const filterCell = document.createElement('td');
+                const filterBtn = document.createElement('button');
+                filterBtn.className = 'tx-filter-btn';
+                filterBtn.textContent = '➕';
+                filterBtn.dataset.label = t.label;
+                filterBtn.dataset.category = t.category_id || '';
+                filterBtn.dataset.subcategory = t.subcategory_id || '';
+                filterCell.appendChild(filterBtn);
+                tr.appendChild(filterCell);
+
+                const dateCell = document.createElement('td');
+                dateCell.textContent = formatDate(t.date);
+                tr.appendChild(dateCell);
+
+                const typeCell = document.createElement('td');
+                typeCell.textContent = type;
+                tr.appendChild(typeCell);
+
+                const payCell = document.createElement('td');
+                payCell.textContent = pay;
+                tr.appendChild(payCell);
+
+                const labelCell = document.createElement('td');
+                labelCell.textContent = t.label;
+                tr.appendChild(labelCell);
+
+                const amountCell = document.createElement('td');
+                amountCell.className = 'amount';
+                amountCell.textContent = formatAmount(t.amount);
+                tr.appendChild(amountCell);
+
+                const catCell = document.createElement('td');
+                const catBtn = document.createElement('button');
+                catBtn.className = 'tx-cat-btn';
+                catBtn.dataset.id = t.id;
+                catBtn.dataset.current = t.category_id || '';
+                if (t.category) {
+                    catBtn.textContent = t.category;
+                    catBtn.style.color = t.category_color || '';
+                } else {
+                    catBtn.textContent = '(Aucune)';
+                    catBtn.style.color = '';
+                }
+                catCell.appendChild(catBtn);
+                tr.appendChild(catCell);
+
+                const subCell = document.createElement('td');
+                const subBtn = document.createElement('button');
+                subBtn.className = 'tx-sub-btn';
+                subBtn.dataset.id = t.id;
+                subBtn.dataset.current = t.subcategory_id || '';
+                subBtn.dataset.categoryId = t.category_id || '';
+                if (t.subcategory) {
+                    subBtn.textContent = t.subcategory;
+                    subBtn.style.color = t.subcategory_color || '';
+                } else {
+                    subBtn.textContent = '(Aucune)';
+                    subBtn.style.color = '';
+                }
+                subCell.appendChild(subBtn);
+                tr.appendChild(subCell);
+
+                const ruleCell = document.createElement('td');
+                const ruleBtn = document.createElement('button');
+                ruleBtn.className = 'tx-rule-btn';
+                ruleBtn.textContent = '⚙️';
+                ruleBtn.dataset.label = t.label;
+                ruleBtn.dataset.category = t.category_id || '';
+                ruleBtn.dataset.subcategory = t.subcategory_id || '';
+                ruleCell.appendChild(ruleBtn);
+                tr.appendChild(ruleCell);
+
+                const recCell = document.createElement('td');
+                const recBox = document.createElement('input');
+                recBox.type = 'checkbox';
+                recBox.checked = t.reconciled;
+                recBox.addEventListener('change', async () => {
+                    await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reconciled: recBox.checked})});
+                    fetchTransactions();
+                });
+                recCell.appendChild(recBox);
+                tr.appendChild(recCell);
+
+                const analyzeCell = document.createElement('td');
+                const analyzeBox = document.createElement('input');
+                analyzeBox.type = 'checkbox';
+                analyzeBox.checked = t.to_analyze;
+                analyzeBox.addEventListener('change', async () => {
+                    await fetch('/transactions/' + t.id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({to_analyze: analyzeBox.checked})});
+                    fetchTransactions();
+                });
+                analyzeCell.appendChild(analyzeBox);
+                tr.appendChild(analyzeCell);
+
+                tbody.appendChild(tr);
+            });
+            adjustLabelColumns();
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resp = await fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, password })
+            });
+            if (resp.ok) {
+                await fetchAccounts();
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                displayAccountInfo();
+                fetchBalanceInfo();
+                fetchTransactions();
+                await refreshCategoryData();
+                fetchRules();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            } else {
+                alert('Connexion échouée');
+            }
+        });
+
+        document.getElementById('csv-file').addEventListener('change', () => {
+            if (document.getElementById('csv-file').files.length) {
+                document.getElementById('upload-form').requestSubmit();
+            }
+        });
+
+        document.getElementById('upload-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const fileInput = document.getElementById('csv-file');
+            if (!fileInput.files.length) return;
+            await createAccount(fileInput.files[0]);
+            fileInput.value = '';
+        });
+
+        async function fetchCategories() {
+            const resp = await fetch('/categories');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            categoriesData = data;
+            const tbody = document.querySelector('#categories-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(c => {
+                const tr = document.createElement('tr');
+                const colorTd = document.createElement('td');
+                const colorSpan = document.createElement('span');
+                colorSpan.style.display = 'inline-block';
+                colorSpan.style.width = '12px';
+                colorSpan.style.height = '12px';
+                colorSpan.style.background = c.color;
+                colorTd.appendChild(colorSpan);
+                tr.appendChild(colorTd);
+
+                const nameTd = document.createElement('td');
+                nameTd.textContent = c.name;
+                tr.appendChild(nameTd);
+
+                const favTd = document.createElement('td');
+                const fav = document.createElement('button');
+                fav.className = 'tx-fav-btn' + (c.favorite ? ' selected' : '');
+                fav.textContent = c.favorite ? '★' : '☆';
+                fav.onclick = async () => {
+                    const resp = await fetch('/categories/' + c.id, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ favorite: !c.favorite })
+                    });
+                    if (resp.ok) {
+                        fav.classList.toggle('selected');
+                    }
+                    await refreshCategoryData();
+                };
+                favTd.appendChild(fav);
+                tr.appendChild(favTd);
+
+                const editTd = document.createElement('td');
+                const edit = document.createElement('button');
+                edit.textContent = 'Éditer';
+                edit.onclick = () => {
+                    document.getElementById('category-id').value = c.id;
+                    document.getElementById('category-name').value = c.name;
+                    document.getElementById('category-color').value = c.color || '#000000';
+                };
+                editTd.appendChild(edit);
+                tr.appendChild(editTd);
+
+                const delTd = document.createElement('td');
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    const resp = await fetch('/categories/' + c.id, { method: 'DELETE' });
+                    const data = await resp.json().catch(() => ({}));
+                    if (resp.ok) {
+                        await refreshCategoryData();
+                        fetchRules();
+                    } else {
+                        if ((data.transactions && data.transactions.length) ||
+                            (data.subcategories && data.subcategories.length)) {
+                            showDeleteError(data.transactions || [], data.subcategories || []);
+                        } else {
+                            alert(data.error || 'Suppression échouée');
+                        }
+                    }
+                };
+                delTd.appendChild(del);
+                tr.appendChild(delTd);
+
+                const subTd = document.createElement('td');
+                const subBtn = document.createElement('button');
+                subBtn.textContent = 'Sous-catégorie';
+                subBtn.onclick = () => {
+                    document.getElementById('subcategory-category').value = c.id;
+                    document.getElementById('subcategory-id').value = '';
+                    document.getElementById('subcategory-name').value = '';
+                    document.getElementById('subcategory-color').value = c.color || '#000000';
+                    showManageSubcats(c.id);
+                };
+                subTd.appendChild(subBtn);
+                tr.appendChild(subTd);
+
+                tbody.appendChild(tr);
+
+            });
+            populateCategorySelects();
+        }
+
+        async function fetchSubcategories() {
+            const resp = await fetch('/subcategories');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            subcategoriesData = data;
+            const list = document.getElementById('subcategories-list');
+            list.innerHTML = '';
+            data.forEach(s => {
+                const li = document.createElement('li');
+                li.appendChild(document.createTextNode(`${s.category} → `));
+                const colorSpan = document.createElement('span');
+                colorSpan.style.display = 'inline-block';
+                colorSpan.style.width = '12px';
+                colorSpan.style.height = '12px';
+                colorSpan.style.background = s.color;
+                colorSpan.style.marginRight = '4px';
+                li.appendChild(colorSpan);
+                li.appendChild(document.createTextNode(s.name));
+
+                const fav = document.createElement('button');
+                fav.className = 'tx-fav-btn' + (s.favorite ? ' selected' : '');
+                fav.textContent = s.favorite ? '★' : '☆';
+                fav.onclick = async () => {
+                    const resp = await fetch('/subcategories/' + s.id, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ favorite: !s.favorite })
+                    });
+                    if (resp.ok) {
+                        fav.classList.toggle('selected');
+                    }
+                    await refreshCategoryData();
+                };
+
+                const edit = document.createElement('button');
+                edit.textContent = 'Éditer';
+                edit.onclick = () => {
+                    document.getElementById('subcategory-id').value = s.id;
+                    document.getElementById('subcategory-name').value = s.name;
+                    document.getElementById('subcategory-category').value = s.category_id;
+                    document.getElementById('subcategory-color').value = s.color || '#000000';
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    await fetch('/subcategories/' + s.id, { method: 'DELETE' });
+                    await refreshCategoryData();
+                };
+                li.append(' ', fav, ' ', edit, ' ', del);
+                list.appendChild(li);
+
+            });
+            populateCategorySelects();
+        }
+
+        async function fetchRules() {
+            const resp = await fetch('/rules');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            rulesData = data;
+            const list = document.getElementById('rules-list');
+            list.innerHTML = '';
+            data.forEach(r => {
+                const li = document.createElement('li');
+                const cat = r.category || '';
+                const sub = r.subcategory ? ' / ' + r.subcategory : '';
+                li.textContent = `${r.pattern} → ${cat}${sub}`;
+                const edit = document.createElement('button');
+                edit.textContent = 'Éditer';
+                edit.onclick = () => {
+                    document.getElementById('rule-id').value = r.id;
+                    document.getElementById('rule-pattern').value = r.pattern;
+                    document.getElementById('rule-category').value = r.category_id;
+                    document.getElementById('rule-subcategory').value = r.subcategory_id || '';
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Supprimer';
+                del.onclick = async () => {
+                    await fetch('/rules/' + r.id, { method: 'DELETE' });
+                    fetchRules();
+                };
+                li.append(' ', edit, ' ', del);
+                list.appendChild(li);
+            });
+        }
+
+       document.getElementById('category-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('category-id').value;
+            const name = document.getElementById('category-name').value;
+            const color = document.getElementById('category-color').value;
+            if (id) {
+                await fetch('/categories/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, color }) });
+            } else {
+                await fetch('/categories', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, color }) });
+            }
+            document.getElementById('category-id').value = '';
+            document.getElementById('category-name').value = '';
+            document.getElementById('category-color').value = '#000000';
+            await refreshCategoryData();
+            fetchRules();
+        });
+
+        document.getElementById('subcategory-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('subcategory-id').value;
+            const name = document.getElementById('subcategory-name').value;
+            const category_id = document.getElementById('subcategory-category').value;
+            const color = document.getElementById('subcategory-color').value;
+            const payload = { name, category_id, color };
+            if (id) {
+                await fetch('/subcategories/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            } else {
+                await fetch('/subcategories', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            }
+            document.getElementById('subcategory-id').value = '';
+            document.getElementById('subcategory-name').value = '';
+            document.getElementById('subcategory-color').value = '#000000';
+            await refreshCategoryData();
+        });
+
+        document.getElementById('rule-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('rule-id').value;
+            let pattern = document.getElementById('rule-pattern').value;
+            pattern = pattern.trim().replace(/\s+/g, ' ');
+            const category_id = document.getElementById('rule-category').value;
+            const subcategory_id = document.getElementById('rule-subcategory').value;
+            const payload = { pattern, category_id, subcategory_id };
+            if (id) {
+                await fetch('/rules/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            } else {
+                await fetch('/rules', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            }
+            document.getElementById('rule-id').value = '';
+            document.getElementById('rule-pattern').value = '';
+            document.getElementById('rule-subcategory').value = '';
+            fetchRules();
+        });
+
+        let dashboardChart;
+        let statsChart;
+        let projChart;
+        let incomeChart;
+        let expenseChart;
+
+        async function fetchStats() {
+            const period = document.getElementById('stats-period').value;
+            const { start, end } = getPeriodDates(period);
+            const params = new URLSearchParams();
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            const url = '/stats' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            if (statsChart) statsChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.month),
+                    datasets: [{
+                        label: 'Total mensuel',
+                        data: data.map(d => d.total),
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)'
+                    }]
+                },
+                options: getChartOptions(hide)
+            });
+        }
+
+        async function fetchCategoryStats() {
+            const period = document.getElementById('stats-period').value;
+            const { start, end } = getPeriodDates(period);
+            const params = new URLSearchParams();
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            const url = '/stats/categories' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const incLabels = [], incData = [], incColors = [];
+            const expLabels = [], expData = [], expColors = [];
+            data.forEach(d => {
+                if (d.positive > 0) {
+                    incLabels.push(d.name);
+                    incData.push(d.positive);
+                    incColors.push(d.color || 'gray');
+                }
+                if (Math.abs(d.negative) > 0) {
+                    expLabels.push(d.name);
+                    expData.push(Math.abs(d.negative));
+                    expColors.push(d.color || 'gray');
+                }
+            });
+            const chartsDiv = document.getElementById('category-charts');
+            const emptyNotice = document.getElementById('category-no-data');
+            if (incData.length === 0 && expData.length === 0) {
+                if (incomeChart) { incomeChart.destroy(); incomeChart = null; }
+                if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+                chartsDiv.style.display = 'none';
+                emptyNotice.style.display = 'block';
+                return;
+            }
+            chartsDiv.style.display = 'table';
+            emptyNotice.style.display = 'none';
+            const ictx = document.getElementById('incomeChart').getContext('2d');
+            if (incomeChart) incomeChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            incomeChart = new Chart(ictx, {
+                type: 'doughnut',
+                data: {
+                    labels: incLabels,
+                    datasets: [{ data: incData, backgroundColor: incColors }]
+                },
+                options: getChartOptions(hide, false)
+            });
+            const ectx = document.getElementById('expenseChart').getContext('2d');
+            if (expenseChart) expenseChart.destroy();
+            expenseChart = new Chart(ectx, {
+                type: 'doughnut',
+                data: {
+                    labels: expLabels,
+                    datasets: [{ data: expData, backgroundColor: expColors }]
+                },
+                options: getChartOptions(hide, false)
+            });
+        }
+
+        async function fetchSankeyStats() {
+            const period = document.getElementById('stats-period').value;
+            const { start, end } = getPeriodDates(period);
+            const params = new URLSearchParams();
+            if (start) params.set('start_date', start);
+            if (end) params.set('end_date', end);
+            const url = '/stats/sankey' + (params.toString() ? `?${params.toString()}` : '');
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            const positives = {};
+            const negatives = {};
+            data.forEach(d => {
+                if (d.sign > 0) {
+                    positives[d.source] = (positives[d.source] || 0) + d.value;
+                } else {
+                    negatives[d.source] = (negatives[d.source] || 0) + d.value;
+                }
+            });
+
+            const posNames = Object.keys(positives);
+            const negNames = Object.keys(negatives);
+            const nodes = [...posNames, 'Total', ...negNames];
+            const nodeX = nodes.map(n => n === 'Total' ? 0.5 : (posNames.includes(n) ? 0 : 1));
+            const index = Object.fromEntries(nodes.map((n, i) => [n, i]));
+
+            const links = [];
+            posNames.forEach(n => {
+                links.push({ source: index[n], target: index['Total'], value: positives[n], color: 'green' });
+            });
+            negNames.forEach(n => {
+                links.push({ source: index['Total'], target: index[n], value: negatives[n], color: 'red' });
+            });
+
+            Plotly.newPlot('sankeyChart', [{
+                type: 'sankey',
+                node: { label: nodes, x: nodeX },
+                link: {
+                    source: links.map(l => l.source),
+                    target: links.map(l => l.target),
+                    value: links.map(l => l.value),
+                    color: links.map(l => l.color),
+                    hovertemplate: '€%{value:.0f}<extra></extra>'
+                }
+            }], { margin: { t: 20 }, hovermode: 'x' });
+        }
+
+        async function fetchDashboard() {
+            const resp = await fetch('/dashboard');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const container = document.getElementById('dashboard-content');
+            container.innerHTML = `<p>Favoris: ${data.favorite_count} | Total 30j: ${formatAmount(data.recent_total)} | Solde: ${formatAmount(data.balance_total)}</p>`;
+            if (data.alerts && data.alerts.length) {
+                const table = document.createElement('table');
+                table.innerHTML = '<thead><tr><th>Date</th><th>Libellé</th><th>Montant</th><th>Catégorie</th><th>Raison</th></tr></thead><tbody></tbody>';
+                const tbody = table.querySelector('tbody');
+                data.alerts.forEach(a => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${formatDate(a.date)}</td><td>${a.label}</td><td class="amount">${formatAmount(a.amount)}</td><td>${a.category}</td><td>${a.reason}</td>`;
+                    tbody.appendChild(tr);
+                });
+                container.appendChild(table);
+            }
+            if (data.favorite_summaries && data.favorite_summaries.length) {
+                const table = document.createElement('table');
+                table.innerHTML = '<thead><tr><th>Catégorie</th><th>Favoris</th></tr></thead><tbody></tbody>';
+                const tbody = table.querySelector('tbody');
+                data.favorite_summaries.forEach(group => {
+                    const tr = document.createElement('tr');
+                    const tdCat = document.createElement('td');
+                    tdCat.textContent = group.category;
+                    const tdFav = document.createElement('td');
+                    if (group.items && group.items.length) {
+                        const inner = document.createElement('table');
+                        inner.innerHTML = '<thead><tr><th>Favori</th><th>Mois en cours</th><th>Moy. 6 mois</th></tr></thead><tbody></tbody>';
+                        const innerBody = inner.querySelector('tbody');
+                        group.items.forEach(f => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td>${f.name}</td><td>${formatAmount(f.current_total)}</td><td>${formatAmount(f.six_month_avg)}</td>`;
+                            innerBody.appendChild(row);
+                        });
+                        tdFav.appendChild(inner);
+                    }
+                    tr.appendChild(tdCat);
+                    tr.appendChild(tdFav);
+                    tbody.appendChild(tr);
+                });
+                container.appendChild(table);
+            }
+            const ctx = document.getElementById('dashboardChart').getContext('2d');
+            if (dashboardChart) dashboardChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            dashboardChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['30 derniers jours'],
+                    datasets: [{
+                        label: 'Total',
+                        data: [data.recent_total],
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                    }]
+                },
+                options: getChartOptions(hide)
+            });
+        }
+
+        function drawProjectionChart() {
+            const rows1 = document.querySelectorAll('#projection-table tbody tr');
+            const rows2 = document.querySelectorAll('#projection-future-table tbody tr');
+            const labels = [];
+            const values = [];
+            rows1.forEach(r => {
+                labels.push(r.children[0].textContent);
+                values.push(parseFloat(r.querySelector('input').value) || 0);
+            });
+            rows2.forEach(r => {
+                labels.push(r.children[0].textContent);
+                values.push(parseFloat(r.querySelector('input').value) || 0);
+            });
+            const ctx = document.getElementById('projectionChart').getContext('2d');
+            if (projChart) projChart.destroy();
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            projChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Projection',
+                        data: values,
+                        fill: false,
+                        borderColor: 'rgba(153, 102, 255, 1)'
+                    }]
+                },
+                options: getChartOptions(hide)
+            });
+        }
+
+        async function fetchProjection() {
+            const resp = await fetch('/projection');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const tbody = document.querySelector('#projection-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(d => {
+                const tr = document.createElement('tr');
+                const monthCell = document.createElement('td');
+                monthCell.textContent = d.month;
+                tr.appendChild(monthCell);
+
+                const amountCell = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.step = '0.01';
+                input.value = Number(d.amount).toFixed(2);
+                input.className = 'amount-input';
+                amountCell.appendChild(input);
+                tr.appendChild(amountCell);
+
+            tbody.appendChild(tr);
+        });
+            drawProjectionChart();
+        }
+
+        document.getElementById('projection-table').addEventListener('input', drawProjectionChart);
+        document.getElementById('projection-future-table').addEventListener('input', drawProjectionChart);
+
+        async function fetchProjectionCategories() {
+            const resp = await fetch('/projection/categories');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            document.getElementById('projection-cat-period').textContent = data.period;
+            const table = document.getElementById('projection-cat-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            const headRow = document.createElement('tr');
+            headRow.innerHTML = '<th>Catégorie</th>';
+            data.months.forEach(m => {
+                const th = document.createElement('th');
+                th.textContent = m;
+                headRow.appendChild(th);
+            });
+            thead.appendChild(headRow);
+            data.rows.forEach(r => {
+                const tr = document.createElement('tr');
+                const tdCat = document.createElement('td');
+                tdCat.textContent = r.category;
+                tr.appendChild(tdCat);
+                r.values.forEach(v => {
+                    const td = document.createElement('td');
+                    td.textContent = formatAmount(v);
+                    td.className = 'amount';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function fetchProjectionFuture() {
+            const mode = document.querySelector('input[name="projection-mode"]:checked')?.value || 'average';
+            if (mode === 'forecast') {
+                const resp = await fetch('/projection/categories/forecast');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                buildFutureTable(data.months, data.rows, data.period);
+            } else {
+                const [avgResp, fResp] = await Promise.all([
+                    fetch('/projection/categories/average'),
+                    fetch('/projection/categories/forecast'),
+                ]);
+                if (!avgResp.ok || !fResp.ok) return;
+                const avgs = await avgResp.json();
+                const fData = await fResp.json();
+                const rows = avgs.map(a => ({
+                    category: a.category,
+                    values: fData.months.map(() => a.average),
+                }));
+                buildFutureTable(fData.months, rows, fData.period);
+            }
+        }
+
+        function buildFutureTable(months, rows, period) {
+            document.getElementById('projection-future-period').textContent = period;
+            const table = document.getElementById('projection-future-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            const headRow = document.createElement('tr');
+            headRow.innerHTML = '<th>Catégorie</th>';
+            months.forEach(m => {
+                const th = document.createElement('th');
+                th.textContent = m;
+                headRow.appendChild(th);
+            });
+            thead.appendChild(headRow);
+            rows.forEach(r => {
+                const tr = document.createElement('tr');
+                const tdCat = document.createElement('td');
+                tdCat.textContent = r.category;
+                tr.appendChild(tdCat);
+                r.values.forEach(v => {
+                    const td = document.createElement('td');
+                    td.textContent = formatAmount(v);
+                    td.className = 'amount';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        let currentCatBtn = null;
+        let currentSubBtn = null;
+        let currentRuleBtn = null;
+        let currentFilterBtn = null;
+        const catOverlay = document.getElementById('category-overlay');
+        const subOverlay = document.getElementById('subcategory-overlay');
+        const dupOverlay = document.getElementById('duplicate-overlay');
+        const ruleOverlay = document.getElementById('rule-overlay');
+        const favFilterOverlay = document.getElementById('fav-filter-overlay');
+        const manageSubcatsOverlay = document.getElementById('manage-subcats-overlay');
+        const delErrorOverlay = document.getElementById('delete-error-overlay');
+        const delErrorSubList = document.getElementById('delete-error-subcat-list');
+        const delErrorList = document.getElementById('delete-error-list');
+        const delErrorClose = document.getElementById('delete-error-close');
+        let manageCatId = null;
+
+        function showPopupAt(overlay, x, y) {
+            overlay.style.display = 'block';
+            overlay.style.alignItems = 'flex-start';
+            overlay.style.justifyContent = 'flex-start';
+            const popup = overlay.querySelector('.popup');
+            if (popup) {
+                popup.style.position = 'absolute';
+                popup.style.left = x + 'px';
+                popup.style.top = y + 'px';
+            }
+        }
+
+        function populateManageSubcats(catId) {
+            const tbody = document.querySelector('#manage-subcats-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            subcategoriesData.filter(s => String(s.category_id) === String(catId)).forEach(s => {
+                const tr = document.createElement('tr');
+
+                const colorTd = document.createElement('td');
+                const colorSpan = document.createElement('span');
+                colorSpan.style.display = 'inline-block';
+                colorSpan.style.width = '12px';
+                colorSpan.style.height = '12px';
+                colorSpan.style.background = s.color;
+                colorTd.appendChild(colorSpan);
+                tr.appendChild(colorTd);
+
+                const nameTd = document.createElement('td');
+                nameTd.textContent = s.name;
+                tr.appendChild(nameTd);
+
+                const favTd = document.createElement('td');
+                const favBtn = document.createElement('button');
+                favBtn.className = 'tx-fav-btn' + (s.favorite ? ' selected' : '');
+                favBtn.textContent = s.favorite ? '★' : '☆';
+                favBtn.onclick = async () => {
+                    await fetch('/subcategories/' + s.id, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ favorite: !s.favorite })
+                    });
+                    await refreshCategoryData();
+                    populateManageSubcats(catId);
+                };
+                favTd.appendChild(favBtn);
+                tr.appendChild(favTd);
+
+                const editTd = document.createElement('td');
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Éditer';
+                editBtn.onclick = () => {
+                    document.getElementById('subcategory-id').value = s.id;
+                    document.getElementById('subcategory-name').value = s.name;
+                    document.getElementById('subcategory-category').value = s.category_id;
+                    document.getElementById('subcategory-color').value = s.color || '#000000';
+                };
+                editTd.appendChild(editBtn);
+                tr.appendChild(editTd);
+
+                const delTd = document.createElement('td');
+                const delBtn = document.createElement('button');
+                delBtn.textContent = 'Supprimer';
+                delBtn.onclick = async () => {
+                    await fetch('/subcategories/' + s.id, { method: 'DELETE' });
+                    await refreshCategoryData();
+                    populateManageSubcats(catId);
+                };
+                delTd.appendChild(delBtn);
+                tr.appendChild(delTd);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showManageSubcats(catId) {
+            manageCatId = catId;
+            populateManageSubcats(catId);
+            manageSubcatsOverlay.style.display = 'flex';
+        }
+
+        document.getElementById('transactions-table').addEventListener('click', e => {
+            if (e.target.classList.contains('tx-cat-btn')) {
+                currentCatBtn = e.target;
+                document.getElementById('popup-category-select').value = currentCatBtn.dataset.current || '';
+                showPopupAt(catOverlay, e.clientX, e.clientY);
+            } else if (e.target.classList.contains('tx-sub-btn')) {
+                currentSubBtn = e.target;
+                populateSubPopup(currentSubBtn.dataset.categoryId);
+                document.getElementById('popup-subcategory-select').value = currentSubBtn.dataset.current || '';
+                showPopupAt(subOverlay, e.clientX, e.clientY);
+            } else if (e.target.classList.contains('tx-rule-btn')) {
+                currentRuleBtn = e.target;
+                const label = currentRuleBtn.dataset.label || '';
+                const words = label.split(/[^\wÀ-ÿ]+/).filter(Boolean);
+                const cont = document.getElementById('rule-label-checkboxes');
+                cont.innerHTML = '';
+                const rule = rulesData.find(r => {
+                    const sameCat = String(r.category_id) === (currentRuleBtn.dataset.category || '');
+                    const sameSub = String(r.subcategory_id || '') === (currentRuleBtn.dataset.subcategory || '');
+                    return sameCat && sameSub && label.toLowerCase().includes((r.pattern || '').toLowerCase());
+                });
+                const patternWords = rule ? (rule.pattern || '').split(/[^\wÀ-ÿ]+/).filter(Boolean) : [];
+                words.forEach(w => {
+                    const lbl = document.createElement('label');
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.value = w;
+                    if (patternWords.includes(w)) cb.checked = true;
+                    lbl.appendChild(cb);
+                    lbl.append(' ' + w + ' ');
+                    cont.appendChild(lbl);
+                });
+                const roc = document.getElementById('rule-overlay-category');
+                roc.value = currentRuleBtn.dataset.category || '';
+                updateSubcategories(roc.value, 'rule-overlay-subcategory', '(Aucune)');
+                document.getElementById('rule-overlay-subcategory').value = currentRuleBtn.dataset.subcategory || '';
+                ruleOverlay.style.display = 'flex';
+            } else if (e.target.classList.contains('tx-filter-btn')) {
+                currentFilterBtn = e.target;
+                const words = (currentFilterBtn.dataset.label || '').split(/[^\wÀ-ÿ]+/).filter(Boolean);
+                const cont = document.getElementById('fav-filter-label-checkboxes');
+                cont.innerHTML = '';
+                words.forEach(w => {
+                    const lbl = document.createElement('label');
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.value = w;
+                    lbl.appendChild(cb);
+                    lbl.append(' ' + w + ' ');
+                    cont.appendChild(lbl);
+                });
+                const foc = document.getElementById('fav-filter-overlay-category');
+                foc.value = currentFilterBtn.dataset.category || '';
+                updateSubcategories(foc.value, 'fav-filter-overlay-subcategory', '(Aucune)');
+                document.getElementById('fav-filter-overlay-subcategory').value = currentFilterBtn.dataset.subcategory || '';
+                favFilterOverlay.style.display = 'flex';
+            }
+        });
+
+        catOverlay.addEventListener('click', async e => {
+            if (e.target === catOverlay) await saveCategory();
+        });
+        subOverlay.addEventListener('click', async e => {
+            if (e.target === subOverlay) await saveSubcategory();
+        });
+        ruleOverlay.addEventListener('click', async e => {
+            if (e.target === ruleOverlay) await saveRule();
+        });
+        favFilterOverlay.addEventListener('click', async e => {
+            if (e.target === favFilterOverlay) await saveFavoriteFilter();
+        });
+        manageSubcatsOverlay.addEventListener('click', e => { if (e.target === manageSubcatsOverlay) manageSubcatsOverlay.style.display = 'none'; });
+
+        function showDeleteError(transactions, subcats) {
+            delErrorSubList.innerHTML = '';
+            (subcats || []).forEach(s => {
+                const li = document.createElement('li');
+                li.textContent = `${s.id} - ${s.name}`;
+                delErrorSubList.appendChild(li);
+            });
+            delErrorList.innerHTML = '';
+            (transactions || []).forEach(t => {
+                const li = document.createElement('li');
+                li.textContent = `${formatDate(t.date)} - ${t.label} - ${formatAmount(t.amount)}`;
+                delErrorList.appendChild(li);
+            });
+            delErrorOverlay.style.display = 'flex';
+        }
+
+        delErrorOverlay.addEventListener('click', e => { if (e.target === delErrorOverlay) delErrorOverlay.style.display = 'none'; });
+        if (delErrorClose) delErrorClose.addEventListener('click', () => { delErrorOverlay.style.display = 'none'; });
+
+        function showDuplicates(dups, accountId) {
+            const list = document.getElementById('duplicate-list');
+            list.innerHTML = '';
+            dupOverlay.dataset.rows = JSON.stringify(dups);
+            dupOverlay.dataset.accountId = accountId || '';
+            dups.forEach((d, idx) => {
+                const li = document.createElement('li');
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = true;
+                cb.dataset.index = idx;
+                li.appendChild(cb);
+                li.appendChild(document.createTextNode(`${formatDate(d.date)} - ${d.label} - ${formatAmount(d.amount)}`));
+                list.appendChild(li);
+            });
+            dupOverlay.style.display = 'flex';
+        }
+
+        dupOverlay.addEventListener('click', e => { if (e.target === dupOverlay) dupOverlay.style.display = 'none'; });
+        document.getElementById('duplicate-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const rows = JSON.parse(dupOverlay.dataset.rows || '[]');
+            const selected = [];
+            document.querySelectorAll('#duplicate-list input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) selected.push(rows[cb.dataset.index]);
+            });
+            dupOverlay.style.display = 'none';
+            if (!selected.length) {
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+                return;
+            }
+            const resp = await fetch('/import/confirm', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ transactions: selected, account_id: dupOverlay.dataset.accountId })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            } else {
+                if (data.errors) alert(data.errors.join('\n')); else alert(data.error || 'Erreur import');
+            }
+        });
+
+        async function saveCategory() {
+            if (!currentCatBtn) return;
+            const id = currentCatBtn.dataset.id;
+            const val = document.getElementById('popup-category-select').value;
+            const resp = await fetch('/transactions/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category_id: val })
+            });
+            if (resp.ok) {
+                const cat = findCategory(val);
+                currentCatBtn.dataset.current = val;
+                if (cat) {
+                    currentCatBtn.textContent = cat.name;
+                    currentCatBtn.style.color = cat.color || '';
+                } else {
+                    currentCatBtn.textContent = '(Aucune)';
+                    currentCatBtn.style.color = '';
+                }
+                fetchTransactions();
+            }
+            catOverlay.style.display = 'none';
+            currentCatBtn = null;
+        }
+
+        document.getElementById('popup-category-save').addEventListener('click', () => {
+            saveCategory();
+        });
+
+        async function saveSubcategory() {
+            if (!currentSubBtn) return;
+            const id = currentSubBtn.dataset.id;
+            const val = document.getElementById('popup-subcategory-select').value;
+            const resp = await fetch('/transactions/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subcategory_id: val })
+            });
+            if (resp.ok) {
+                const sub = findSubcategory(val);
+                currentSubBtn.dataset.current = val;
+                if (sub) {
+                    currentSubBtn.textContent = `${sub.category} - ${sub.name}`;
+                    currentSubBtn.style.color = sub.color || '';
+                } else {
+                    currentSubBtn.textContent = '(Aucune)';
+                    currentSubBtn.style.color = '';
+                }
+                fetchTransactions();
+            }
+            subOverlay.style.display = 'none';
+            currentSubBtn = null;
+        }
+
+        document.getElementById('popup-subcategory-save').addEventListener('click', () => {
+            saveSubcategory();
+        });
+
+        async function saveRule() {
+            if (!currentRuleBtn) return;
+            const words = Array.from(document.querySelectorAll('#rule-label-checkboxes input:checked')).map(cb => cb.value);
+            const category_id = document.getElementById('rule-overlay-category').value;
+            const subcategory_id = document.getElementById('rule-overlay-subcategory').value;
+            const pattern = words.join(' ');
+            if (pattern && category_id) {
+                await fetch('/rules', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pattern, category_id, subcategory_id })
+                });
+                await fetchRules();
+                fetchTransactions();
+            }
+            ruleOverlay.style.display = 'none';
+            currentRuleBtn = null;
+        }
+
+        document.getElementById('rule-overlay-save').addEventListener('click', () => {
+            saveRule();
+        });
+
+        async function saveFavoriteFilter() {
+            if (!currentFilterBtn) return;
+            const words = Array.from(document.querySelectorAll('#fav-filter-label-checkboxes input:checked')).map(cb => cb.value);
+            const category_id = document.getElementById('fav-filter-overlay-category').value;
+            const subcategory_id = document.getElementById('fav-filter-overlay-subcategory').value;
+            const pattern = words.join(' ');
+            if (pattern || category_id || subcategory_id) {
+                await fetch('/favorite_filters', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pattern, category_id, subcategory_id })
+                });
+                fetchDashboard();
+            }
+            favFilterOverlay.style.display = 'none';
+            currentFilterBtn = null;
+        }
+
+        document.getElementById('fav-filter-overlay-save').addEventListener('click', () => {
+            saveFavoriteFilter();
+        });
+
+        const sectionIds = ['transactions-section', 'accounts-section', 'dashboard-section', 'stats-section', 'projection-section', 'settings-section'];
+        const sidebarButtons = document.querySelectorAll('#navbar button[data-target]');
+        sidebarButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.target;
+                sectionIds.forEach(id => {
+                    document.getElementById(id).style.display = id === target ? 'block' : 'none';
+                });
+                sidebarButtons.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                if (target === 'projection-section') {
+                    fetchProjection();
+                    fetchProjectionCategories();
+                    fetchProjectionFuture();
+                }
+            });
+        });
+        if (sidebarButtons.length) {
+            sidebarButtons[0].classList.add('selected');
+        }
+
+        document.querySelectorAll('#navbar .menu-header').forEach(header => {
+            header.addEventListener('click', () => {
+                header.parentElement.classList.toggle('open');
+            });
+        });
+
+        const themeSelect = document.getElementById('theme-select');
+        const fontSelect = document.getElementById('font-select');
+        const hideAmountsBox = document.getElementById('hide-amounts');
+        const themeLink = document.getElementById('theme-link');
+        const accountSelect = document.getElementById('account-select');
+        const statsPeriodSelect = document.getElementById('stats-period');
+        const filterCategorySelect = document.getElementById('filter-category');
+        const ruleOverlayCategorySelect = document.getElementById('rule-overlay-category');
+        const favFilterOverlayCategorySelect = document.getElementById('fav-filter-overlay-category');
+        const projectionModeInputs = document.querySelectorAll('#projection-mode input');
+
+        function applyPreferences() {
+            const theme = localStorage.getItem('theme') || 'light';
+            const font = localStorage.getItem('font') || 'roboto';
+            const hide = localStorage.getItem('hideAmounts') === 'true';
+            themeLink.href = theme + '.css';
+            document.body.classList.remove('font-roboto', 'font-arial', 'font-geneva');
+            document.body.classList.add('font-' + font);
+            document.body.classList.toggle('hide-amounts', hide);
+            themeSelect.value = theme;
+            fontSelect.value = font;
+            hideAmountsBox.checked = hide;
+        }
+
+        themeSelect.addEventListener('change', () => {
+            localStorage.setItem('theme', themeSelect.value);
+            applyPreferences();
+        });
+        fontSelect.addEventListener('change', () => {
+            localStorage.setItem('font', fontSelect.value);
+            applyPreferences();
+        });
+        hideAmountsBox.addEventListener('change', () => {
+            localStorage.setItem('hideAmounts', hideAmountsBox.checked);
+            applyPreferences();
+            fetchTransactions();
+            fetchStats();
+            fetchProjection();
+            fetchProjectionCategories();
+            fetchProjectionFuture();
+            fetchCategoryStats();
+            fetchSankeyStats();
+        });
+
+        statsPeriodSelect.addEventListener('change', () => {
+            fetchStats();
+            fetchCategoryStats();
+            fetchSankeyStats();
+        });
+
+        if (filterCategorySelect) {
+            filterCategorySelect.addEventListener('change', () => {
+                updateSubcategories(filterCategorySelect.value, 'filter-subcategory', '(Toutes)');
+            });
+        }
+
+        if (ruleOverlayCategorySelect) {
+            ruleOverlayCategorySelect.addEventListener('change', () => {
+                updateSubcategories(ruleOverlayCategorySelect.value, 'rule-overlay-subcategory', '(Aucune)');
+            });
+        }
+
+        if (favFilterOverlayCategorySelect) {
+            favFilterOverlayCategorySelect.addEventListener('change', () => {
+                updateSubcategories(favFilterOverlayCategorySelect.value, 'fav-filter-overlay-subcategory', '(Aucune)');
+            });
+        }
+
+        projectionModeInputs.forEach(r => {
+            r.addEventListener('change', () => {
+                fetchProjectionFuture();
+            });
+        });
+
+        accountSelect.addEventListener('change', () => {
+            selectedAccountId = accountSelect.value;
+            fetchTransactions();
+            fetchBalanceInfo();
+            displayAccountInfo();
+        });
+
+        document.getElementById('balance-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!selectedAccountId) return;
+            const date = document.getElementById('balance-date').value;
+            const amount = document.getElementById('balance-amount').value;
+            await fetch(`/accounts/${selectedAccountId}/balance`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ balance_date: date, initial_balance: amount })
+            });
+            fetchDashboard();
+            fetchStats();
+        });
+
+        const filterInputs = [
+            'filter-start-date', 'filter-end-date', 'filter-period',
+            'filter-type', 'filter-payment',
+            'filter-label', 'filter-min-amount', 'filter-max-amount',
+            'filter-category', 'filter-subcategory', 'filter-amount-order',
+            'filter-favorite', 'filter-reconciled', 'filter-toanalyze'
+        ];
+        filterInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => {
+                    fetchTransactions();
+                    fetchCategoryStats();
+                    fetchSankeyStats();
+                });
+                el.addEventListener('change', () => {
+                    fetchTransactions();
+                    fetchCategoryStats();
+                    fetchSankeyStats();
+                });
+            }
+        });
+
+        document.getElementById('reset-transactions').addEventListener('click', async () => {
+            if (!confirm('Confirmer la suppression de toutes les transactions ?')) return;
+            const resp = await fetch('/reset', {method: 'POST'});
+            if (resp.ok) {
+                fetchTransactions();
+                fetchDashboard();
+                fetchStats();
+                fetchProjection();
+                fetchProjectionCategories();
+                fetchProjectionFuture();
+                fetchCategoryStats();
+                fetchSankeyStats();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (incomeChart) incomeChart.resize();
+            if (expenseChart) expenseChart.resize();
+        });
+
+        applyPreferences();
+    </script>
+    <script src="sankey.js"></script>
+    <script>
+        const exampleData = [
+            {date: '2025-07-01', categorie: 'Alimentation et Boissons', montant: 120, id: 'TX123'},
+            {date: '2025-07-03', categorie: 'Loisirs et Divertissements', montant: 75, id: 'TX124'}
+        ];
+        new FinancialSankey('financialSankey', exampleData);
+    </script>
+</body>
+</html>
